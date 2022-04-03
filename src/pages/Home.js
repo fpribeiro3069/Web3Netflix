@@ -4,14 +4,34 @@ import "./Home.css";
 import { Logo } from '../images/Netflix';
 import { Button, ConnectButton, Icon, Modal, Tab, TabList, useNotification } from 'web3uikit';
 import { movies } from "../helpers/library";
-import { useState } from "react";
-import { useMoralis } from 'react-moralis';
+import { useState, useEffect } from "react";
+import { useMoralis } from "react-moralis";
 
 const Home = () => {
 
   const [visible, setVisible] = useState(false);
   const [selectedFilm, setSelectedFilm] = useState();
-  const { isAuthenticated } = useMoralis();
+  const [myMovies, setMyMovies] = useState();
+  const { isAuthenticated, Moralis, account } = useMoralis();
+
+  useEffect(() => {
+    async function fetchMovieList() {
+       await Moralis.start({
+          serverUrl: "https://xq9lkddbjxjm.usemoralis.com:2053/server",
+          appId: "4p1pb4RlHnFOMKu5dSjWG5J4nJdLGu3tP5c8X8oa",
+        }); //if getting errors add this 
+
+      const userMovieList = await Moralis.Cloud.run("getUserMovieList", {address: account});
+      
+      const filteredA = movies.filter(function(movie) {
+        return userMovieList.indexOf(movie.Name) > -1;
+      });
+
+      setMyMovies(filteredA);
+    }
+
+    fetchMovieList();
+  }, [account])
 
   const dispatch = useNotification();
 
@@ -61,7 +81,7 @@ const Home = () => {
           </div>
           <div className='thumbs'>
             {movies &&
-              movies.map((movie) => {
+              movies.map((movie, index) => {
                 return (<img src={
                   movie.Thumbnail} 
                   className='thumbnail'
@@ -69,6 +89,7 @@ const Home = () => {
                     setSelectedFilm(movie);
                     setVisible(true);
                   }}
+                  key={index}
                   ></img>)
               })
             }
